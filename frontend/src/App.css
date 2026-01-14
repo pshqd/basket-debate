@@ -1,0 +1,485 @@
+/* ================== 0. ГЛОБАЛЬНЫЙ RESET ================== */
+/* Сбрасываем отступы и включаем box-sizing для всех элементов */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+/* ================== 1. БАЗОВАЯ РАЗМЕТКА СТРАНИЦЫ ================== */
+/* 
+  html, body:
+  - фиксируем на размер окна (viewport)
+  - убираем скролл по X, по Y при желании можно включить
+  - делаем фон прозрачным, чтобы было видно градиент #app
+*/
+html, body {
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden;          /* <-- если нужна вертикальная прокрутка, поменяй на auto */
+  background: transparent !important;
+}
+
+
+/* ================== 2. КОРНЕВОЙ КОНТЕЙНЕР VUE (#app) ================== */
+/*
+  #app:
+  - занимает всё окно
+  - задаёт общий градиентный фон
+  - отключает overflow, чтобы не появлялся скролл внутри
+*/
+#app {
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+
+  background: linear-gradient(
+    135deg,
+    #667eea 0%,      /* Фиолетовый */
+    #764ba2 25%,     /* Пурпурный */
+    #f093fb 50%,     /* Розовый */
+    #4facfe 75%,     /* Голубой */
+    #667eea 100%     /* Фиолетовый */
+  ) !important;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  color: #1e293b;
+  overflow: hidden;           
+
+
+/* ================== 3. ШАПКА (HEADER) ================== */
+/*
+  .header — верхняя плашка с названием/описанием:
+  - градиентный фон
+  - адаптивные отступы
+  - тень и линия снизу
+*/
+.header {
+  background: linear-gradient(
+    135deg,
+    var(--color-bg-1) 0%,
+    var(--color-bg-5) 40%,
+    var(--color-bg-7) 100%
+  );
+  color: var(--color-text);
+  padding: clamp(1.5rem, 4vw, 1.0rem) clamp(1rem, 3vw, 2rem);
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+
+/* ================== 4. ОСНОВНОЙ КОНТЕЙНЕР (HEADER + СЕТКА) ================== */
+/*
+  .container:
+  - двухколоночная сетка: слева sidebar (запрос), справа content (результат)
+  - адаптивные размеры колонок и отступы
+  - минимальная высота, чтобы почти заполнить экран
+*/
+.container {
+  max-width: none !important; 
+  display: grid;
+  grid-template-columns: 
+    clamp(350px, 28vw, 500px) 1fr;   /* левая колонка 350–500px, правая — всё остальное */
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+  min-height: calc(100vh - 200px);  /* высота экрана минус шапка */
+  margin: 0 !important;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+}
+
+
+/* ================== 5. ЛЕВАЯ ПАНЕЛЬ (SIDEBAR) ================== */
+/*
+  .sidebar:
+  - карточка с формой и параметрами
+  - "липнет" к верху при скролле
+*/
+.sidebar {
+  background: var(--color-surface);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-card-border);
+  height: fit-content;
+  position: sticky;
+  top: clamp(1rem, 3vw, 2rem);
+  align-self: start;
+}
+
+.sidebar h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  /* градиентный текст заголовка */
+  background: linear-gradient(135deg, #283c97 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+.sidebar h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+
+/* ================== 6. ПРАВАЯ ПАНЕЛЬ (CONTENT) ================== */
+/*
+  .content:
+  - блок с результатами оптимизации
+  - белая карточка с тенью
+*/
+.content {
+  background: white;
+  padding: 2rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  min-height: 500px;
+  border: 1px solid var(--color-card-border);
+}
+
+.content h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  /* градиентный заголовок */
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+
+/* ================== 7. ФОРМЫ (ИНПУТЫ, ЛЕЙБЛЫ) ================== */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #475569;
+}
+
+/* Текстовые поля / select */
+.input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.875rem;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: white;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.input::placeholder {
+  color: #cbd5e1;
+}
+
+
+/* ================== 8. КНОПКИ (ПЕРВИЧНАЯ/ВТОРИЧНАЯ) ================== */
+.btn-primary,
+.btn-secondary {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  min-height: 44px;
+  border: none;
+  border-radius: 0.875rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+/* Основная кнопка "Оптимизировать" */
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  margin-bottom: 1rem;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Вспомогательная кнопка (например, сброс параметров) */
+.btn-secondary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  margin-top: 1rem;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+}
+
+
+/* ================== 9. РАЗДЕЛИТЕЛЬ ================== */
+/* Горизонтальная линия между блоками в sidebar/content */
+.divider {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 2px solid #f0f4f8;
+}
+
+
+/* ================== 10. СОСТОЯНИЯ (LOADING / ERROR / EMPTY) ================== */
+/* Общие состояния справа в content — пока грузим / ошибка / пусто */
+.state-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+/* Круглый спиннер */
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1e293b;
+}
+
+.loading-desc {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* Состояние ошибки от агентов / бэкенда */
+.state-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  min-height: 300px;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-radius: 1.5rem;
+}
+
+.error-text {
+  color: #e74c3c;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Состояние, когда ещё нет результатов (приглашение ввести запрос) */
+.state-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  min-height: 300px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 1.5rem;
+}
+
+.empty-text {
+  font-size: 1.1rem;
+  color: #64748b;
+}
+
+
+/* ================== 11. КАРТОЧКИ ТОВАРОВ ================== */
+/*
+  .products — сетка с товарами
+  .product-card — отдельная карточка продукта из корзины
+*/
+.products {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.product-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  border: 2px solid #f0f4f8;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  border-color: #667eea;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+/* Верхняя часть карточки: название + бейджи */
+.product-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+}
+
+.product-top h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  flex: 1;
+}
+
+
+/* ================== 12. БЕЙДЖИ АГЕНТОВ ================== */
+/* .badge — общий стиль, далее варианты по типу агента */
+.badge {
+  display: inline-block;
+  padding: 0.375rem 0.875rem;
+  border-radius: 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Агент бюджета */
+.badge-budget {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+/* Агент совместимости товаров */
+.badge-compatibility {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+/* Агент профиля пользователя */
+.badge-profile {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
+/* Обоснование, почему товар выбран */
+.product-reason {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+/* Нижняя часть карточки: цена + рейтинг */
+.product-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Цена товара */
+.price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #e74c3c 0%, #c0152f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Рейтинг / оценка */
+.rating {
+  font-size: 0.9rem;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+
+/* ================== 13. ИТОГИ КОРЗИНЫ (SUMMARY) ================== */
+/*
+  Общий блок итогов: общая цена, экономия и т.д.
+*/
+.summary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+/* Отдельная строка в итогах (например, "Всего" / "Экономия") */
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.summary-row:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Цена в блоке итогов (поверх белого текста) */
+.summary-row .price {
+  color: white;
+  font-size: 1.3rem;
+  background: none;
+  -webkit-text-fill-color: unset;
+}
+
+/* Текст "Экономия" */
+.savings {
+  color: #a8f5d9;
+  font-weight: 700;
+}
+}
