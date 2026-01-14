@@ -3,9 +3,10 @@ name = "basket-debate"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "celery>=5.6.2",
+    "dvc>=3.66.1",
     "flask>=3.1.2",
     "pettingzoo>=1.25.0",
     "redis>=7.1.0",
