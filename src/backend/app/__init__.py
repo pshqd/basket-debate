@@ -121,10 +121,4 @@ def create_app():
             return jsonify({"status": "error", "message": str(e)}), 500
 
 
-    @app.route('/optimize', methods=['POST'])
-    def optimize_basket():
-        """Совместимость с фронтендом — перенаправляет на /simulate."""
-        return simulate_basket()
-
-
     return app
