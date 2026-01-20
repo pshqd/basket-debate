@@ -1,0 +1,10 @@
+schema: '2.0'
+stages:
+  download_off:
+    cmd: curl -L -o data/raw/en.openfoodfacts.org.products.csv.gz 
+      https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz
+    outs:
+    - path: data/raw/en.openfoodfacts.org.products.csv.gz
+      hash: md5
+      md5: 8e6a65739fc9701223c67a711f61a479
+      size: 1209918801
