@@ -202,8 +202,19 @@ class BasketEnv(ParallelEnv):
         
         # === ПРОВЕРКА ЗАВЕРШЕНИЯ ===
         done = self.steps >= self._max_steps
+
+        # НОВОЕ: Финальный штраф за недостаток разнообразия
+        if done and len(self.cart) >= 3:
+            categories = [self.products[idx]["product_category"] for idx in self.cart]
+            unique_categories = len(set(categories))
+            
+            if unique_categories < 3:  # Меньше 3 категорий в финальной корзине
+                for agent in self.agents:
+                    rewards[agent] -= 15.0  # Жёсткий штраф всем агентам
+
         terms = {agent: done for agent in self.agents}
         truncs = {agent: False for agent in self.agents}
+
         
         infos = {
             agent: {

@@ -60,7 +60,7 @@ def fetch_candidate_products(
     
     # Сортировка: сначала дешёвые, потом разнообразие по категориям
     query += """
-        ORDER BY price_per_unit ASC
+        ORDER BY RANDOM()
         LIMIT ?
     """
     params.append(limit)
