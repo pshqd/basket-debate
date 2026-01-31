@@ -1,10 +1,6 @@
-// frontend/src/composables/useBasket.js
-// Теория: Composable = функция, возвращающая reactive state + methods
-// Как useState/useEffect в React
-
+// src/frontend/src/composables/useBasket.js
 import { ref, computed } from 'vue'
 
-// Функция возвращает объект со всем state
 export function useBasket() {
   // === STATE ===
   const userQuery = ref('')
@@ -14,6 +10,7 @@ export function useBasket() {
   const diet = ref('любая')
   const allergies = ref('')
   const originalPrice = ref(0)
+  const parsedConstraints = ref(null)  // НОВОЕ: что понял LLM
 
   // === COMPUTED ===
   const totalPrice = computed(() => 
@@ -31,21 +28,23 @@ export function useBasket() {
     if (!userQuery.value.trim()) {
       error.value = '⚠️ Введите запрос!'
       basket.value = []
+      parsedConstraints.value = null
       return
     }
 
     loading.value = true
     error.value = null
     basket.value = []
+    parsedConstraints.value = null
 
     try {
-      const response = await fetch('api/optimize', {
+      // ИЗМЕНЕНО: Новый endpoint с LLM-парсингом
+      const response = await fetch('http://localhost:5000/api/parse-and-optimize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: userQuery.value,
-          diet: diet.value,
-          allergies: allergies.value
+          query: userQuery.value
+          // diet и allergies пока не используем, LLM сам всё вытащит из текста
         })
       })
 
@@ -53,13 +52,19 @@ export function useBasket() {
         throw new Error(`Server error ${response.status}`)
       }
 
-    const data = await response.json()
+      const data = await response.json()
 
-    basket.value = data.basket || []
-    originalPrice.value = data.summary?.original_price || 0
+      if (data.status === 'success') {
+        basket.value = data.basket || []
+        originalPrice.value = data.summary?.original_price || 0
+        parsedConstraints.value = data.parsed  // НОВОЕ: сохраняем то, что понял LLM
+      } else {
+        throw new Error(data.message || 'Unknown error')
+      }
 
     } catch (err) {
       error.value = `❌ Ошибка: ${err.message}`
+      console.error('Optimization error:', err)
     } finally {
       loading.value = false
     }
@@ -73,7 +78,7 @@ export function useBasket() {
     alert(`✅ Добавлено ${basket.value.length} товаров!`)
   }
 
-  // Возвращаем ВСЁ, что нужно компоненту
+  // Возвращаем всё, включая новое поле
   return {
     // State
     userQuery,
@@ -85,6 +90,7 @@ export function useBasket() {
     originalPrice,
     totalPrice,
     agentLabel,
+    parsedConstraints,  // НОВОЕ
     // Methods
     optimizeBasket,
     formatPrice,
