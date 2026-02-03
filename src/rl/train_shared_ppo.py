@@ -12,7 +12,7 @@
 
 import supersuit as ss
 from stable_baselines3 import PPO
-
+from stable_baselines3.ppo import MlpPolicy
 from src.backend.db.queries import fetch_candidate_products
 from src.agent.env import create_basket_env
 from src.agent.utils import pad_products_to_k
@@ -81,19 +81,26 @@ if __name__ == "__main__":
     # Создаём модель PPO (shared policy для всех агентов)
     print("\n[2/4] Инициализируем PPO...")
     model = PPO(
-        "MlpPolicy",  # Простая fully-connected сеть
+        "MlpPolicy",
         env,
-        verbose=1,    # Логи в консоль
-        n_steps=1024, # Сколько шагов собирать перед обновлением
-        batch_size=256,
-        learning_rate=3e-4,
-        tensorboard_log="./logs/ppo_basket/"  # Логи для TensorBoard
+        verbose=1,
+        n_steps=2048,        # БЫЛО 1024 → увеличиваем (больше exploration)
+        batch_size=128,      # БЫЛО 256 → уменьшаем (более стохастичные обновления)
+        learning_rate=1e-4,  # БЫЛО 3e-4 → уменьшаем (более медленное обучение)
+        tensorboard_log="./logs/ppo_basket/",
+        ent_coef=2.0,        # БЫЛО 1.5 → увеличиваем ЕЩЁ БОЛЬШЕ
+        max_grad_norm=0.5,
+        vf_coef=0.25,        # БЫЛО 0.5 → уменьшаем влияние critic
+        gamma=0.95,
+        gae_lambda=0.9,      # НОВОЕ: уменьшаем (больше bias, меньше variance)
+        clip_range=0.3,      # БЫЛО 0.2 → увеличиваем (больше изменений за обновление)
+        target_kl=0.03       # НОВОЕ: ограничиваем KL divergence (стабильность)
     )
     print("✅ PPO создан")
     
     # Обучаем модель
     print("\n[3/4] Обучаем модель (50k шагов)...")
-    model.learn(total_timesteps=50_000)
+    model.learn(total_timesteps=200_000)
     print("✅ Обучение завершено")
     
     # Сохраняем модель

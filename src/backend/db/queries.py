@@ -42,7 +42,7 @@ def fetch_candidate_products(
         SELECT id, product_name, product_category, brand, 
             package_size, unit, price_per_unit, tags
         FROM products
-        WHERE price_per_unit >= ?  
+        WHERE price_per_unit >= ?
         AND price_per_unit <= ?
     """
     params = [min_price, max_price]  # НОВОЕ: два параметра
@@ -86,7 +86,6 @@ def fetch_candidate_products(
             "price_per_unit": row["price_per_unit"],
             "tags": row["tags"].split("|") if row["tags"] else []
         })
-    
     return products
 
 
