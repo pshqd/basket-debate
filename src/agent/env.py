@@ -19,7 +19,8 @@ class BasketEnv(ParallelEnv):
         self, 
         products,  
         constraints,  
-        max_steps=10
+        max_steps=10,
+        render_mode = None
     ):
         """
         Args:
@@ -31,7 +32,7 @@ class BasketEnv(ParallelEnv):
             people: Количество человек
         """
         super().__init__()
-        
+        self.render_mode = render_mode
         self.products = products  
         self.constraints = constraints  
         self._max_steps = int(max_steps)
@@ -64,7 +65,7 @@ class BasketEnv(ParallelEnv):
         self.cart = []
         self.steps = 0
         self._cumulative_rewards = {agent: 0.0 for agent in self.possible_agents}
-    
+
     def observation_space(self, agent):
         return self._observation_spaces[agent]
     
@@ -232,15 +233,20 @@ class BasketEnv(ParallelEnv):
         return obs, rewards, terms, truncs, infos
     
     def render(self):
-        """Вывод текущего состояния (для дебага)."""
-        print(f"Step {self.steps}: Cart={self.cart}, Sum={self.current_sum:.2f}")
+        if self.render_mode in (None, "human"):
+            print(f"Step {self.steps}: Cart={self.cart}, Sum={self.current_sum:.2f}")
+            return None
+        if self.render_mode == "ansi":
+            return f"Step {self.steps}: Cart={self.cart}, Sum={self.current_sum:.2f}"
+        return None
+
     
     def close(self):
         """Очистка ресурсов."""
         pass
 
 
-def create_basket_env(products, constraints, max_steps=10):
+def create_basket_env(products, constraints, max_steps=10,render_mode=None):
     """
     Factory-функция для создания окружения.
     
@@ -255,5 +261,6 @@ def create_basket_env(products, constraints, max_steps=10):
     return BasketEnv(
         products=products,
         constraints=constraints,
-        max_steps=int(max_steps)
+        max_steps=int(max_steps),
+        render_mode=render_mode
     )
