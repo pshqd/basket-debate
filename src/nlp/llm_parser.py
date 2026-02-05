@@ -210,3 +210,25 @@ def _empty_result(user_query: str) -> Dict[str, Any]:
         "exclude_tags": [],
         "include_tags": []
     }
+
+def test_parser():
+    """Тестирует парсер."""
+    print("=" * 70)
+    print("🧪 ТЕСТИРОВАНИЕ LLM Parser")
+    print("=" * 70)
+    
+    test_queries = [
+        "Ужин на двоих за 1500 рублей",
+        "Веганский завтрак на троих",
+        "Обед без молочки и рыбы",
+        "Быстрый перекус на 500 рублей"
+    ]
+    
+    for query in test_queries:
+        print(f"\n📝 Запрос: {query}")
+        result = parse_query_with_function_calling(query)
+        print(f"   Результат: {json.dumps(result, ensure_ascii=False, indent=2)}")
+
+
+if __name__ == "__main__":
+    test_parser()

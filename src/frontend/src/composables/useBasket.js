@@ -25,7 +25,8 @@ export function useBasket() {
   const agentLabel = {
     'compatibility': '🔗 Совместимость',
     'budget': '💰 Бюджет',
-    'profile': '👤 Профиль'
+    'profile': '👤 Профиль',
+    'llm_parser': '🧠 LLM Parser'
   }
   
   // ========== METHODS ==========
@@ -57,11 +58,16 @@ export function useBasket() {
       
       const data = await response.json()
       
+      console.log('📦 Backend response:', data)  // ✅ DEBUG
+      
       if (data.status === 'success') {
         basket.value = data.basket || []
         parsedConstraints.value = data.parsed
         originalPrice.value = data.summary?.original_price || 0
-        stages.value = data.stages || []  // История агентов
+        
+        // ✅ ИСПРАВЛЕНО: Нормализуем stages
+        stages.value = normalizeStages(data.stages || [])
+        
       } else {
         throw new Error(data.message || 'Unknown error')
       }
@@ -72,6 +78,26 @@ export function useBasket() {
     } finally {
       loading.value = false
     }
+  }
+  
+  // ✅ НОВАЯ ФУНКЦИЯ: Нормализация stages
+  function normalizeStages(stages) {
+    return stages.map(stage => {
+      const normalized = { ...stage }
+      
+      // Если compatibility_score это объект - извлекаем total_score
+      if (stage.result?.compatibility_score) {
+        const score = stage.result.compatibility_score
+        normalized.result = {
+          ...stage.result,
+          compatibility_score: typeof score === 'object' 
+            ? score.total_score 
+            : score
+        }
+      }
+      
+      return normalized
+    })
   }
   
   function formatPrice(price) {

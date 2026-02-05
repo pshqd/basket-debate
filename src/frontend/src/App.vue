@@ -7,7 +7,7 @@
 
     <div class="container">
       
-      <!-- ========== ЛЕВАЯ ПАНЕЛЬ (БЕЗ ИЗМЕНЕНИЙ) ========== -->
+      <!-- ========== ЛЕВАЯ ПАНЕЛЬ ========== -->
       <aside class="sidebar">
         <h2>Ваш запрос</h2>
 
@@ -91,17 +91,17 @@
                 <strong>{{ parsedConstraints.people }}</strong>
               </div>
               
-              <div v-if="parsedConstraints.meal_type.length > 0" class="parsed-item">
+              <div v-if="parsedConstraints.meal_type && parsedConstraints.meal_type.length > 0" class="parsed-item">
                 <span class="parsed-label">Приём пищи:</span>
                 <strong>{{ parsedConstraints.meal_type.join(', ') }}</strong>
               </div>
               
-              <div v-if="parsedConstraints.exclude_tags.length > 0" class="parsed-item">
+              <div v-if="parsedConstraints.exclude_tags && parsedConstraints.exclude_tags.length > 0" class="parsed-item">
                 <span class="parsed-label">Исключить:</span>
                 <strong class="exclude">{{ parsedConstraints.exclude_tags.join(', ') }}</strong>
               </div>
               
-              <div v-if="parsedConstraints.include_tags.length > 0" class="parsed-item">
+              <div v-if="parsedConstraints.include_tags && parsedConstraints.include_tags.length > 0" class="parsed-item">
                 <span class="parsed-label">Обязательно:</span>
                 <strong class="include">{{ parsedConstraints.include_tags.join(', ') }}</strong>
               </div>
@@ -122,11 +122,16 @@
               <div class="product-top">
                 <h3>{{ item.name }}</h3>
                 <span class="badge" :class="'badge-' + item.agent">
-                  {{ agentLabel[item.agent] }}
+                  {{ agentLabel[item.agent] || item.agent }}
                 </span>
               </div>
               
               <p class="product-reason">{{ item.reason }}</p>
+              
+              <div class="product-meta">
+                <span class="category">{{ item.category }}</span>
+                <span v-if="item.brand" class="brand">{{ item.brand }}</span>
+              </div>
               
               <div class="product-bottom">
                 <span class="price">{{ formatPrice(item.price) }} ₽</span>
@@ -147,7 +152,7 @@
             </div>
             <div class="summary-row">
               <span>Экономия:</span>
-              <strong class="savings">-{{ formatPrice(originalPrice - totalPrice) }} ₽</strong>
+              <strong class="savings">-{{ formatPrice(Math.max(0, originalPrice - totalPrice)) }} ₽</strong>
             </div>
           </div>
 
@@ -156,7 +161,7 @@
             🛍️ Добавить в корзину
           </button>
           
-          <!-- ========== НОВОЕ: ИСТОРИЯ АГЕНТОВ ========== -->
+          <!-- ========== ИСТОРИЯ АГЕНТОВ ========== -->
           <div v-if="stages.length > 0" class="stages-history">
             <h3>📊 История обработки</h3>
             <div class="stages-list">
@@ -170,14 +175,25 @@
                   <span class="stage-duration">{{ stage.duration }}с</span>
                 </div>
                 <div class="stage-details">
-                  <span v-if="stage.result.scenario">
-                    Сценарий: {{ stage.result.scenario.name }}
+                  <!-- ✅ ИСПРАВЛЕНО: Проверка наличия данных -->
+                  <span v-if="stage.result?.scenario?.name">
+                    📋 Сценарий: {{ stage.result.scenario.name }}
                   </span>
-                  <span v-if="stage.result.compatibility_score">
-                    Score: {{ stage.result.compatibility_score.total_score.toFixed(2) }}
+                  
+                  <span v-if="stage.result?.compatibility_score != null">
+                    📊 Score: {{ Number(stage.result.compatibility_score).toFixed(2) }}
                   </span>
-                  <span v-if="stage.result.message">
-                    {{ stage.result.message }}
+                  
+                  <span v-if="stage.result?.saved != null">
+                    💰 Экономия: {{ formatPrice(stage.result.saved) }} ₽
+                  </span>
+                  
+                  <span v-if="stage.result?.replacements != null">
+                    🔄 Замен: {{ stage.result.replacements }}
+                  </span>
+                  
+                  <span v-if="stage.result?.message">
+                    💬 {{ stage.result.message }}
                   </span>
                 </div>
               </div>
@@ -210,9 +226,40 @@ const {
   totalPrice,
   agentLabel,
   parsedConstraints,
-  stages,  // НОВОЕ
+  stages,
   optimizeBasket,
   formatPrice,
   addToCart
 } = useBasket()
 </script>
+
+<style scoped>
+/* Дополнительные стили для новых элементов */
+.product-meta {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.category {
+  padding: 2px 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.brand {
+  padding: 2px 8px;
+  background: #e3f2fd;
+  border-radius: 4px;
+}
+
+.stage-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+  color: #666;
+}
+</style>
