@@ -33,7 +33,7 @@ from src.utils.queries import get_connection, DB_PATH
 
 # ==================== КОНФИГУРАЦИЯ ====================
 
-MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+MODEL_NAME = "Qwen/Qwen3-Embedding-0.6B"
 BATCH_SIZE = 512 
 
 

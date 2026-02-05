@@ -27,7 +27,7 @@ from src.utils.queries import get_connection
 
 # ==================== КОНФИГУРАЦИЯ ====================
 
-MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+MODEL_NAME = "Qwen/Qwen3-Embedding-0.6B"
 
 
 # ==================== КЛАСС ProductSearcher ====================
