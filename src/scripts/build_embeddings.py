@@ -33,8 +33,8 @@ from src.utils.queries import get_connection, DB_PATH
 
 # ==================== КОНФИГУРАЦИЯ ====================
 
-MODEL_NAME = "Qwen/Qwen3-Embedding-0.6B"
-BATCH_SIZE = 512 
+MODEL_NAME = "intfloat/multilingual-e5-large"
+BATCH_SIZE = 1024 
 
 
 # ==================== ФУНКЦИИ ====================

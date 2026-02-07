@@ -27,7 +27,7 @@ from src.utils.queries import get_connection
 
 # ==================== КОНФИГУРАЦИЯ ====================
 
-MODEL_NAME = "Qwen/Qwen3-Embedding-0.6B"
+MODEL_NAME = "intfloat/multilingual-e5-large"
 
 
 # ==================== КЛАСС ProductSearcher ====================
