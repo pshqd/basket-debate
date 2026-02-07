@@ -124,25 +124,31 @@ def to_float(x) -> float:
         return math.nan
 
 
-def normalize_price(price: float, size: float, unit: str) -> Tuple[float, Optional[str]]:
-    """Нормализует цену к базовым единицам (кг, л, шт)."""
+def normalize_price(price: float, size: float, unit: str) -> Tuple[float, float, Optional[str]]:
+    """
+    Нормализует цену И размер упаковки к базовым единицам (кг, л, шт).
+    
+    Returns:
+        (price_per_unit, normalized_size, normalized_unit)
+    """
     if math.isnan(size) or size <= 0:
-        return math.nan, None
+        return math.nan, math.nan, None
     
     unit = str(unit).lower().strip()
     
     if unit == 'г':
-        return round(price / size * 1000, 2), 'кг'
+        return round(price / size * 1000, 2), round(size / 1000, 3), 'кг'
     elif unit == 'мл':
-        return round(price / size * 1000, 2), 'л'
+        return round(price / size * 1000, 2), round(size / 1000, 3), 'л'
     elif unit == 'кг':
-        return round(price / size, 2), 'кг'
+        return round(price / size, 2), round(size, 3), 'кг'
     elif unit == 'л':
-        return round(price / size, 2), 'л'
+        return round(price / size, 2), round(size, 3), 'л'
     elif unit == 'шт':
-        return round(price / size, 2), 'шт'
+        return round(price / size, 2), round(size, 3), 'шт'
     else:
-        return math.nan, None
+        return math.nan, math.nan, None
+
 
 
 def extract_tags(product_name: str, product_category: str) -> List[str]:
@@ -232,7 +238,7 @@ def normalize_row(row) -> Optional[Dict]:
     unit = row['unit']
     price = row['new_price']
     
-    price_per_unit, normalized_unit = normalize_price(price, size, unit)
+    price_per_unit, normalized_size, normalized_unit = normalize_price(price, size, unit)
     is_valid, reason = is_valid_product(row, price_per_unit, normalized_unit)
     
     if not is_valid:
@@ -245,12 +251,13 @@ def normalize_row(row) -> Optional[Dict]:
         "product_name": name,
         "product_category": row['product_category'],
         "brand": row['brand'],
-        "package_size": size,
+        "package_size": normalized_size,  # ✅ Теперь в кг/л/шт
         "unit": normalized_unit,
         "price_per_unit": price_per_unit,
         "tags": "|".join(tags),
         "meal_components": "|".join(meal_components)
     }
+
 
 
 def process_csv():

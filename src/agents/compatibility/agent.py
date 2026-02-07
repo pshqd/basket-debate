@@ -3,21 +3,28 @@
 Агент для подбора совместимых товаров на основе сценариев.
 """
 
+
 from typing import Dict, List, Optional
 from pathlib import Path
+
 
 from src.agents.compatibility.scenario_matcher import ScenarioMatcher
 from src.agents.compatibility.product_searcher import ProductSearcher
 from src.agents.compatibility.scorer import CompatibilityScorer
+from src.schemas.basket_item import BasketItem, create_basket_item
+
 
 
 # ==================== КОНФИГУРАЦИЯ ====================
+
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 SCENARIOS_PATH = PROJECT_ROOT / "data" / "scenarios.json"
 
 
+
 # ==================== КЛАСС CompatibilityAgent ====================
+
 
 class CompatibilityAgent:
     """
@@ -131,33 +138,39 @@ class CompatibilityAgent:
             # Берём лучший товар
             best_product = candidates[0]
             
-            # Рассчитываем цену
-            price_per_unit = best_product.get('price_per_unit', 0)
-            
-            # Простой расчёт: цена * количество (позже улучшим)
-            item_total_price = round(price_per_unit * (quantity_needed / 1000), 2)  # г -> кг
-            
-            # Добавляем в корзину
-            basket_item = {
+            product_for_schema = {
                 'id': best_product['id'],
-                'product_name': best_product['product_name'],
-                'product_category': best_product.get('product_category', ''),
+                'name': best_product.get('product_name', best_product.get('name', '')),
+                'price': best_product.get('price_per_unit', 0),
+                'unit': best_product.get('unit', 'кг'),  # ✅ Уже нормализован
+                'category': best_product.get('product_category', ''),
                 'brand': best_product.get('brand', ''),
-                'price_per_unit': price_per_unit,
-                'unit': best_product.get('unit', 'кг'),
-                'quantity_needed': quantity_needed,
-                'quantity_unit': unit,
-                'total_price': item_total_price,
-                'ingredient_role': ingredient,
-                'required': required,
-                'search_score': best_product.get('score', 0),
-                'meal_components': best_product.get('meal_components', [])
+                'rating': best_product.get('rating')
             }
+
+            # Конвертируем количество из сценария в единицы товара
+            quantity_in_product_units = quantity_needed
+            if unit == 'г' and product_for_schema['unit'] == 'кг':
+                quantity_in_product_units = quantity_needed / 1000
+            elif unit == 'мл' and product_for_schema['unit'] == 'л':
+                quantity_in_product_units = quantity_needed / 1000
+            # Если unit уже совпадает ('кг' == 'кг'), конвертация не нужна
+
+            # Создаем BasketItem
+            basket_item = create_basket_item(
+                product=product_for_schema,
+                quantity=quantity_in_product_units,  # уже в кг/л/шт
+                agent='compatibility',
+                reason=f'Найден по запросу "{search_query}"',
+                ingredient_role=ingredient,
+                search_score=best_product.get('score', 0)
+            )
+
             
             basket.append(basket_item)
-            total_price += item_total_price
+            total_price += basket_item['total_price']
             
-            print(f"   ✅ {best_product['product_name']}: {item_total_price:.2f}₽")
+            print(f"   ✅ {basket_item['name']}: {basket_item['total_price']:.2f}₽")
         
         # ============================================
         # ШАГ 3: Оценка совместимости
@@ -190,7 +203,9 @@ class CompatibilityAgent:
         }
 
 
+
 # ==================== ТЕСТИРОВАНИЕ ====================
+
 
 def test_agent():
     """Тестирует работу CompatibilityAgent с умным выбором сценариев и тегами."""
@@ -225,8 +240,8 @@ def test_agent():
     
     print(f"\n📋 Корзина (первые 5 товаров):")
     for item in result1['basket'][:5]:
-        print(f"   - {item['product_name']}: {item['total_price']:.2f}₽ "
-              f"({item['quantity_needed']}{item['quantity_unit']})")
+        print(f"   - {item['name']}: {item['total_price']:.2f}₽ "
+              f"({item['quantity']}{item['unit']})")
     if len(result1['basket']) > 5:
         print(f"   ... и ещё {len(result1['basket']) - 5} товаров")
     
@@ -256,9 +271,9 @@ def test_agent():
                           'кефир', 'йогурт', 'ряженка', 'сливки']
         has_dairy = False
         for item in result2['basket']:
-            name_lower = item['product_name'].lower()
+            name_lower = item['name'].lower()
             if any(k in name_lower for k in dairy_keywords):
-                print(f"   ⚠ Найден молочный продукт: {item['product_name']}")
+                print(f"   ⚠ Найден молочный продукт: {item['name']}")
                 has_dairy = True
         
         if not has_dairy:
@@ -289,10 +304,6 @@ def test_agent():
     print("\n" + "=" * 70)
     print("✅ Тестирование завершено")
     print("=" * 70)
-
-
-if __name__ == "__main__":
-    test_agent()
 
 
 if __name__ == "__main__":

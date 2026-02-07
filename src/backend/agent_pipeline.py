@@ -5,7 +5,7 @@
 
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 import time
 
 # Добавляем корень проекта в PYTHONPATH
@@ -15,6 +15,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.agents.compatibility.agent import CompatibilityAgent
 from src.agents.budget.agent import BudgetAgent
 from src.nlp.llm_parser import parse_query_with_function_calling
+from src.schemas.basket_item import BasketItem  
 
 
 class AgentPipeline:
@@ -35,6 +36,12 @@ class AgentPipeline:
     def process(self, user_query: str) -> Dict[str, Any]:
         """
         Обрабатывает запрос через весь пайплайн.
+        
+        Args:
+            user_query: Запрос пользователя в свободной форме
+            
+        Returns:
+            Результат обработки с корзиной и метаданными
         """
         start_time = time.time()
         stages = []
@@ -49,15 +56,12 @@ class AgentPipeline:
             
             parsed_query = parse_query_with_function_calling(user_query)
             
-            # Дефолты
-            if not parsed_query.get('budget_rub'):
-                parsed_query['budget_rub'] = 3000
-            if not parsed_query.get('people'):
-                parsed_query['people'] = 1
-            if not parsed_query.get('meal_type') or len(parsed_query['meal_type']) == 0:
-                parsed_query['meal_type'] = ['dinner']
+            budget_rub = parsed_query.get('budget_rub') or 3000
+            people = parsed_query.get('people') or 1
+            meal_types = parsed_query.get('meal_type') or ['dinner']
             
             print(f"   ✅ Распознано: {parsed_query}")
+            print(f"   💡 Применены дефолты: people={people}, budget={budget_rub}, meals={meal_types}")
             
             stages.append({
                 'agent': 'llm_parser',
@@ -74,38 +78,21 @@ class AgentPipeline:
             stage2_start = time.time()
             
             compatibility_query = {
-                'meal_types': parsed_query.get('meal_type', ['dinner']),
-                'people': parsed_query.get('people', 1),
-                'budget_rub': parsed_query.get('budget_rub'),
+                'meal_types': meal_types,
+                'people': people,
+                'budget_rub': budget_rub,
                 'exclude_tags': parsed_query.get('exclude_tags', []),
                 'include_tags': parsed_query.get('include_tags', [])
             }
             
             compatibility_result = self.compatibility_agent.generate_basket(
                 parsed_query=compatibility_query,
-                strategy='random'
+                strategy='smart'  
             )
             
-            basket_v1 = compatibility_result.get('basket', [])
+            basket_v1: List[BasketItem] = compatibility_result.get('basket', [])
             
-            # Преобразуем формат
-            basket_v1_formatted = []
-            for item in basket_v1:
-                basket_v1_formatted.append({
-                    'id': item.get('id'),
-                    'name': item.get('product_name'),
-                    'category': item.get('product_category', ''),
-                    'brand': item.get('brand', ''),
-                    'price': item.get('total_price', 0),
-                    'unit': item.get('unit', ''),
-                    'quantity': item.get('quantity_needed', 1),
-                    'agent': 'compatibility',
-                    'reason': f"Ингредиент: {item.get('ingredient_role', 'основной')}",
-                    'rating': 4.5,
-                    'search_score': item.get('search_score', 0)
-                })
-            
-            print(f"   ✅ Найдено товаров: {len(basket_v1_formatted)}")
+            print(f"   ✅ Найдено товаров: {len(basket_v1)}")
             print(f"   💵 Итого: {compatibility_result.get('total_price', 0):.2f}₽")
             
             stages.append({
@@ -114,7 +101,7 @@ class AgentPipeline:
                 'status': 'completed',
                 'duration': round(time.time() - stage2_start, 2),
                 'result': {
-                    'basket': basket_v1_formatted,
+                    'basket': basket_v1,
                     'scenario': compatibility_result.get('scenario_used'),
                     'compatibility_score': compatibility_result.get('compatibility_score'),
                     'total_price': compatibility_result.get('total_price'),
@@ -122,7 +109,7 @@ class AgentPipeline:
                 }
             })
             
-            basket_current = basket_v1_formatted
+            basket_current = basket_v1
             
             # ============================================
             # ЭТАП 3: BUDGET AGENT
@@ -131,12 +118,12 @@ class AgentPipeline:
             stage3_start = time.time()
             
             budget_result = self.budget_agent.optimize(
-                basket=basket_v1_formatted,
-                budget_rub=parsed_query.get('budget_rub'),
+                basket=basket_current,  # ✅ Передаем List[BasketItem]
+                budget_rub=budget_rub,
                 min_discount=0.2
             )
             
-            basket_v2 = budget_result['basket']
+            basket_v2: List[BasketItem] = budget_result['basket']
             
             print(f"   ✅ Оптимизировано товаров: {len(budget_result['replacements'])}")
             print(f"   💰 Экономия: {budget_result['saved']:.2f}₽")
@@ -180,24 +167,30 @@ class AgentPipeline:
             # ============================================
             # ФИНАЛЬНЫЙ РЕЗУЛЬТАТ
             # ============================================
-            total_price = sum(item['price'] for item in basket_v3)
+            total_price = sum(item['total_price'] for item in basket_v3)
             original_price = compatibility_result.get('total_price', total_price)
             savings = original_price - total_price
             
             return {
                 'status': 'success',
                 'parsed': parsed_query,
-                'basket': basket_v3,
+                'basket': basket_v3,  # List[BasketItem]
                 'summary': {
                     'items_count': len(basket_v3),
                     'total_price': round(total_price, 2),
                     'original_price': round(original_price, 2),
                     'savings': round(savings, 2),
-                    'budget_rub': parsed_query.get('budget_rub'),
-                    'within_budget': total_price <= parsed_query.get('budget_rub', float('inf')),
+                    'budget_rub': budget_rub,
+                    'within_budget': total_price <= budget_rub,
                     'execution_time_sec': round(time.time() - start_time, 2)
                 },
-                'stages': stages
+                'stages': stages,
+                'metadata': {
+                    'people': people,
+                    'meal_types': meal_types,
+                    'scenario_used': compatibility_result.get('scenario_used', {}).get('name'),
+                    'strategy': 'smart'
+                }
             }
         
         except Exception as e:
@@ -207,6 +200,7 @@ class AgentPipeline:
             return {
                 'status': 'error',
                 'message': str(e),
+                'type': type(e).__name__,
                 'parsed': parsed_query,
                 'stages': stages
             }
