@@ -471,12 +471,12 @@ class ScenarioMatcher:
         ]
         
         summary = f"""
-Сценарий: {name}
-Тип: {meal_type}
-Время приготовления: {time_min} мин
-Порций: {people}
-Ингредиентов: {num_components}
-Основные: {', '.join(main_ingredients[:5])}
+        Сценарий: {name}
+        Тип: {meal_type}
+        Время приготовления: {time_min} мин
+        Порций: {people}
+        Ингредиентов: {num_components}
+        Основные: {', '.join(main_ingredients[:5])}
         """.strip()
         
         return summary
