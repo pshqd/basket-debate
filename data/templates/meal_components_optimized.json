@@ -1,0 +1,766 @@
+{
+  "product_categories": {
+    "dairy": {
+      "name": [
+        "молоко",
+        "сливки",
+        "сметана",
+        "ряженка",
+        "кефир",
+        "йогурт",
+        "простокваша",
+        "айран",
+        "тан",
+        "топлёное молоко"
+      ],
+      "attributes": {
+        "meal_types": [
+          "breakfast",
+          "snack"
+        ],
+        "meal_components": [
+          "beverage",
+          "sauce"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "refrigerated",
+        "shelf_life_days": 7
+      }
+    },
+    "cheese": {
+      "name": [
+        "сыр",
+        "моцарелла",
+        "пармезан",
+        "чеддер",
+        "гауда",
+        "фета",
+        "брынза",
+        "адыгейский",
+        "сулугуни",
+        "рикотта",
+        "маскарпоне",
+        "плавленый сыр",
+        "российский",
+        "голландский",
+        "швейцарский",
+        "крем-сыр",
+        "филадельфия"
+      ],
+      "attributes": {
+        "meal_types": [
+          "breakfast",
+          "lunch",
+          "dinner",
+          "snack"
+        ],
+        "meal_components": [
+          "snack",
+          "salad"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "refrigerated",
+        "shelf_life_days": 30
+      }
+    },
+    "curd_products": {
+      "name": [
+        "творог",
+        "творожная масса",
+        "творожный сырок",
+        "сырок глазированный",
+        "зерненый творог",
+        "обезжиренный творог"
+      ],
+      "attributes": {
+        "meal_types": [
+          "breakfast",
+          "snack",
+          "dessert"
+        ],
+        "meal_components": [
+          "breakfast",
+          "snack"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "refrigerated",
+        "shelf_life_days": 5
+      }
+    },
+    "meat_raw": {
+      "name": [
+        "говядина",
+        "телятина",
+        "свинина",
+        "баранина",
+        "вырезка",
+        "филе",
+        "ребра",
+        "грудинка",
+        "фарш говяжий",
+        "фарш свиной",
+        "фарш смешанный"
+      ],
+      "attributes": {
+        "meal_types": [
+          "lunch",
+          "dinner"
+        ],
+        "meal_components": [
+          "main_course"
+        ],
+        "preparation_time": "long",
+        "requires_cooking": true,
+        "storage_type": "refrigerated",
+        "shelf_life_days": 3
+      }
+    },
+    "poultry": {
+      "name": [
+        "курица",
+        "цыпленок",
+        "индейка",
+        "утка",
+        "куриная грудка",
+        "куриное филе",
+        "куриные бедра",
+        "куриные голени",
+        "куриные крылья",
+        "фарш куриный"
+      ],
+      "attributes": {
+        "meal_types": [
+          "lunch",
+          "dinner"
+        ],
+        "meal_components": [
+          "main_course"
+        ],
+        "preparation_time": "medium",
+        "requires_cooking": true,
+        "storage_type": "refrigerated",
+        "shelf_life_days": 3
+      }
+    },
+    "fish_seafood": {
+      "name": [
+        "рыба",
+        "сёмга",
+        "лосось",
+        "форель",
+        "горбуша",
+        "треска",
+        "минтай",
+        "скумбрия",
+        "сельдь",
+        "тунец",
+        "креветки",
+        "кальмары",
+        "мидии",
+        "икра красная",
+        "икра чёрная",
+        "филе рыбное"
+      ],
+      "attributes": {
+        "meal_types": [
+          "lunch",
+          "dinner"
+        ],
+        "meal_components": [
+          "main_course",
+          "salad"
+        ],
+        "preparation_time": "medium",
+        "requires_cooking": true,
+        "storage_type": "refrigerated",
+        "shelf_life_days": 2
+      }
+    },
+    "meat_products_cooked": {
+      "name": [
+        "колбаса",
+        "сосиски",
+        "сардельки",
+        "ветчина",
+        "буженина",
+        "салями",
+        "сервелат",
+        "докторская",
+        "молочная",
+        "охотничьи колбаски"
+      ],
+      "attributes": {
+        "meal_types": [
+          "breakfast",
+          "lunch",
+          "dinner",
+          "snack"
+        ],
+        "meal_components": [
+          "snack",
+          "main_course"
+        ],
+        "preparation_time": "fast",
+        "requires_cooking": false,
+        "storage_type": "refrigerated",
+        "shelf_life_days": 10
+      }
+    },
+    "pasta_grains": {
+      "name": [
+        "макароны",
+        "паста",
+        "спагетти",
+        "пенне",
+        "фузилли",
+        "лапша",
+        "рис",
+        "гречка",
+        "овсянка",
+        "пшено",
+        "булгур",
+        "киноа",
+        "перловка"
+      ],
+      "attributes": {
+        "meal_types": [
+          "breakfast",
+          "lunch",
+          "dinner"
+        ],
+        "meal_components": [
+          "side_dish",
+          "main_course"
+        ],
+        "preparation_time": "medium",
+        "requires_cooking": true,
+        "storage_type": "dry",
+        "shelf_life_days": 365
+      }
+    },
+    "bakery": {
+      "name": [
+        "хлеб",
+        "батон",
+        "багет",
+        "чиабатта",
+        "булочка",
+        "круассан",
+        "лаваш",
+        "пита",
+        "тортилья"
+      ],
+      "attributes": {
+        "meal_types": [
+          "breakfast",
+          "lunch",
+          "dinner",
+          "snack"
+        ],
+        "meal_components": [
+          "bakery",
+          "side_dish"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "dry",
+        "shelf_life_days": 7
+      }
+    },
+    "vegetables": {
+      "name": [
+        "картофель",
+        "морковь",
+        "свёкла",
+        "капуста",
+        "огурец",
+        "помидор",
+        "томат",
+        "лук",
+        "чеснок",
+        "перец",
+        "баклажан",
+        "кабачок",
+        "тыква",
+        "зелень",
+        "петрушка",
+        "укроп",
+        "базилик",
+        "руккола"
+      ],
+      "attributes": {
+        "meal_types": [
+          "lunch",
+          "dinner",
+          "snack"
+        ],
+        "meal_components": [
+          "side_dish",
+          "salad"
+        ],
+        "preparation_time": "medium",
+        "requires_cooking": "optional",
+        "storage_type": "refrigerated",
+        "shelf_life_days": 7
+      }
+    },
+    "fruits_berries": {
+      "name": [
+        "яблоко",
+        "груша",
+        "банан",
+        "апельсин",
+        "мандарин",
+        "лимон",
+        "виноград",
+        "клубника",
+        "малина",
+        "черника",
+        "вишня",
+        "черешня",
+        "персик",
+        "абрикос",
+        "слива",
+        "киви",
+        "ананас",
+        "манго"
+      ],
+      "attributes": {
+        "meal_types": [
+          "breakfast",
+          "snack",
+          "dessert"
+        ],
+        "meal_components": [
+          "snack",
+          "dessert"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "refrigerated",
+        "shelf_life_days": 7
+      }
+    },
+    "nuts_seeds": {
+      "name": [
+        "орехи",
+        "грецкий орех",
+        "миндаль",
+        "кешью",
+        "фисташки",
+        "семечки",
+        "семена льна",
+        "семена чиа"
+      ],
+      "attributes": {
+        "meal_types": [
+          "snack"
+        ],
+        "meal_components": [
+          "snack",
+          "salad"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "dry",
+        "shelf_life_days": 180
+      }
+    },
+    "legumes": {
+      "name": [
+        "горох",
+        "нут",
+        "чечевица",
+        "фасоль",
+        "маш",
+        "соя",
+        "бобы"
+      ],
+      "attributes": {
+        "meal_types": [
+          "lunch",
+          "dinner"
+        ],
+        "meal_components": [
+          "main_course",
+          "side_dish"
+        ],
+        "preparation_time": "long",
+        "requires_cooking": true,
+        "storage_type": "dry",
+        "shelf_life_days": 365
+      }
+    },
+    "sauces_condiments": {
+      "name": [
+        "майонез",
+        "кетчуп",
+        "горчица",
+        "соус",
+        "уксус",
+        "масло растительное",
+        "масло оливковое",
+        "масло сливочное"
+      ],
+      "attributes": {
+        "meal_types": [
+          "lunch",
+          "dinner"
+        ],
+        "meal_components": [
+          "sauce"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "dry",
+        "shelf_life_days": 180
+      }
+    },
+    "beverages_hot": {
+      "name": [
+        "чай",
+        "кофе",
+        "какао",
+        "цикорий"
+      ],
+      "attributes": {
+        "meal_types": [
+          "breakfast",
+          "snack"
+        ],
+        "meal_components": [
+          "beverage"
+        ],
+        "preparation_time": "fast",
+        "requires_cooking": true,
+        "storage_type": "dry",
+        "shelf_life_days": 365
+      }
+    },
+    "beverages_cold": {
+      "name": [
+        "сок",
+        "вода",
+        "минеральная вода",
+        "квас",
+        "морс",
+        "компот",
+        "газировка",
+        "лимонад"
+      ],
+      "attributes": {
+        "meal_types": [
+          "breakfast",
+          "lunch",
+          "dinner",
+          "snack"
+        ],
+        "meal_components": [
+          "beverage"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "refrigerated",
+        "shelf_life_days": 7
+      }
+    },
+    "desserts_sweet": {
+      "name": [
+        "мороженое",
+        "шоколад",
+        "конфеты",
+        "зефир",
+        "мармелад",
+        "печенье",
+        "вафли",
+        "пряник",
+        "торт",
+        "пирожное"
+      ],
+      "attributes": {
+        "meal_types": [
+          "snack",
+          "dessert"
+        ],
+        "meal_components": [
+          "dessert",
+          "snack"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "varies",
+        "shelf_life_days": 30
+      }
+    },
+    "snacks": {
+      "name": [
+        "чипсы",
+        "крекеры",
+        "сухарики",
+        "попкорн",
+        "батончик"
+      ],
+      "attributes": {
+        "meal_types": [
+          "snack"
+        ],
+        "meal_components": [
+          "snack"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "dry",
+        "shelf_life_days": 180
+      }
+    },
+    "eggs": {
+      "name": [
+        "яйца",
+        "яйцо",
+        "куриные яйца",
+        "перепелиные яйца"
+      ],
+      "attributes": {
+        "meal_types": [
+          "breakfast",
+          "lunch",
+          "dinner"
+        ],
+        "meal_components": [
+          "breakfast",
+          "main_course"
+        ],
+        "preparation_time": "fast",
+        "requires_cooking": true,
+        "storage_type": "refrigerated",
+        "shelf_life_days": 25
+      }
+    },
+    "frozen_foods": {
+      "name": [
+        "замороженные овощи",
+        "замороженные ягоды",
+        "пельмени",
+        "вареники"
+      ],
+      "attributes": {
+        "meal_types": [
+          "lunch",
+          "dinner"
+        ],
+        "meal_components": [
+          "main_course",
+          "side_dish"
+        ],
+        "preparation_time": "medium",
+        "requires_cooking": true,
+        "storage_type": "frozen",
+        "shelf_life_days": 180
+      }
+    },
+    "canned_foods": {
+      "name": [
+        "консервы",
+        "тушёнка",
+        "паштет",
+        "горошек консервированный",
+        "кукуруза консервированная",
+        "фасоль консервированная"
+      ],
+      "attributes": {
+        "meal_types": [
+          "lunch",
+          "dinner",
+          "snack"
+        ],
+        "meal_components": [
+          "main_course",
+          "side_dish"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "dry",
+        "shelf_life_days": 730
+      }
+    },
+    "spices_seasonings": {
+      "name": [
+        "соль",
+        "сахар",
+        "перец",
+        "специи",
+        "приправа"
+      ],
+      "attributes": {
+        "meal_types": [
+          "lunch",
+          "dinner"
+        ],
+        "meal_components": [
+          "sauce"
+        ],
+        "preparation_time": "instant",
+        "requires_cooking": false,
+        "storage_type": "dry",
+        "shelf_life_days": 365
+      }
+    }
+  },
+  "meal_component_rules": {
+    "main_course": {
+      "description": "Основное блюдо, источник белка",
+      "products": [
+        "мясо",
+        "рыба",
+        "птица",
+        "курица",
+        "говядина",
+        "свинина",
+        "яйца",
+        "пельмени"
+      ],
+      "min_weight_g": 100,
+      "max_weight_g": 300,
+      "compatible_with": [
+        "side_dish",
+        "salad",
+        "sauce"
+      ],
+      "incompatible_with": []
+    },
+    "side_dish": {
+      "description": "Гарнир",
+      "products": [
+        "макароны",
+        "рис",
+        "гречка",
+        "картофель",
+        "овощи"
+      ],
+      "min_weight_g": 150,
+      "max_weight_g": 300,
+      "compatible_with": [
+        "main_course",
+        "salad",
+        "sauce"
+      ],
+      "incompatible_with": []
+    },
+    "beverage": {
+      "description": "Напиток",
+      "products": [
+        "чай",
+        "кофе",
+        "сок",
+        "вода",
+        "молоко"
+      ],
+      "min_volume_ml": 200,
+      "max_volume_ml": 500,
+      "compatible_with": [
+        "all"
+      ],
+      "incompatible_with": []
+    },
+    "bakery": {
+      "description": "Хлеб",
+      "products": [
+        "хлеб",
+        "булка",
+        "батон",
+        "багет"
+      ],
+      "min_weight_g": 30,
+      "max_weight_g": 150,
+      "compatible_with": [
+        "all"
+      ],
+      "incompatible_with": []
+    },
+    "dessert": {
+      "description": "Десерт",
+      "products": [
+        "печенье",
+        "шоколад",
+        "мороженое",
+        "фрукты"
+      ],
+      "min_weight_g": 50,
+      "max_weight_g": 200,
+      "compatible_with": [
+        "beverage"
+      ],
+      "incompatible_with": [
+        "main_course"
+      ]
+    },
+    "sauce": {
+      "description": "Соус",
+      "products": [
+        "майонез",
+        "кетчуп",
+        "горчица",
+        "сметана"
+      ],
+      "min_volume_ml": 30,
+      "max_volume_ml": 100,
+      "compatible_with": [
+        "main_course",
+        "side_dish",
+        "salad"
+      ],
+      "incompatible_with": []
+    },
+    "salad": {
+      "description": "Салат",
+      "products": [
+        "овощи",
+        "помидор",
+        "огурец",
+        "зелень"
+      ],
+      "min_weight_g": 100,
+      "max_weight_g": 250,
+      "compatible_with": [
+        "main_course",
+        "side_dish",
+        "sauce"
+      ],
+      "incompatible_with": []
+    },
+    "snack": {
+      "description": "Закуска/перекус",
+      "products": [
+        "сыр",
+        "колбаса",
+        "орехи",
+        "чипсы"
+      ],
+      "min_weight_g": 30,
+      "max_weight_g": 150,
+      "compatible_with": [
+        "beverage"
+      ],
+      "incompatible_with": []
+    },
+    "breakfast": {
+      "description": "Завтрак",
+      "products": [
+        "яйца",
+        "творог",
+        "овсянка",
+        "каша"
+      ],
+      "min_weight_g": 100,
+      "max_weight_g": 300,
+      "compatible_with": [
+        "beverage",
+        "bakery"
+      ],
+      "incompatible_with": []
+    }
+  }
+}

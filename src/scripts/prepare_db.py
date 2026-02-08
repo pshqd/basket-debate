@@ -38,9 +38,9 @@ from src.utils.queries import get_connection, DB_PATH
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 INPUT_CSV = PROJECT_ROOT / "data" / "raw" / "russian_supermarket_prices.csv"
-TAG_RULES_PATH = PROJECT_ROOT / "data" / "templates" / "tag_rules_extended.json"
+TAG_RULES_PATH = PROJECT_ROOT / "data" / "templates" / "tag_rules_optimized.json"
 MOCK_PRODUCTS_PATH = PROJECT_ROOT / "data" / "templates" / "mock.json"
-MEAL_COMPONENTS_PATH = PROJECT_ROOT / "data" / "templates" /"meal_components_extended.json"
+MEAL_COMPONENTS_PATH = PROJECT_ROOT / "data" / "templates" /"meal_components_optimized.json"
 
 CHUNKSIZE = 50_000
 MAX_REASONABLE_PRICE = 3000  # ₽/кг
