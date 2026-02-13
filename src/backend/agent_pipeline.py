@@ -20,145 +20,171 @@ from src.schemas.basket_item import BasketItem
 
 # src/backend/agent_pipeline.py
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class AgentPipeline:
     """Пайплайн для последовательной обработки запроса агентами."""
     
     def __init__(self):
         """Инициализирует агентов."""
-        print("   🤖 Загрузка Compatibility Agent...")
-        self.compatibility_agent = CompatibilityAgent()
+        logger.info("🤖 Инициализация AgentPipeline...")
         
-        print("   💰 Загрузка Budget Agent...")
-        self.budget_agent = BudgetAgent()
+        try:
+            self.compatibility_agent = CompatibilityAgent()
+            logger.info("   ✅ CompatibilityAgent загружен")
+        except Exception as e:
+            logger.error(f"   ❌ Ошибка загрузки CompatibilityAgent: {e}")
+            raise
         
-        print("   👤 Profile Agent (заглушка)...")
+        try:
+            self.budget_agent = BudgetAgent()
+            logger.info("   ✅ BudgetAgent загружен")
+        except Exception as e:
+            logger.error(f"   ❌ Ошибка загрузки BudgetAgent: {e}")
+            raise
+        
         self.profile_agent = None  # TODO
-    
+        logger.info("   ⏳ ProfileAgent (в разработке)")
     
     def process(self, user_query: str) -> Dict[str, Any]:
-        """
-        Обрабатывает запрос через весь пайплайн.
-        
-        Args:
-            user_query: Запрос пользователя в свободной форме
-            
-        Returns:
-            Результат обработки с корзиной и метаданными
-        """
+        """Обрабатывает запрос через весь пайплайн."""
         start_time = time.time()
         stages = []
         parsed_query = {}
         
         try:
-            # ============================================
             # ЭТАП 1: LLM PARSER
-            # ============================================
-            print("\n🧠 ЭТАП 1: LLM Parser")
+            logger.info(f"📝 Запрос пользователя: {user_query}")
             stage1_start = time.time()
             
-            parsed_query = parse_query_with_function_calling(user_query)
+            try:
+                parsed_query = parse_query_with_function_calling(user_query)
+                
+                budget_rub = parsed_query.get('budget_rub') or 3000
+                people = parsed_query.get('people') or 2
+                meal_types = parsed_query.get('meal_type') or ['dinner']
+                
+                logger.info(f"✅ LLM Parser: budget={budget_rub}, people={people}, meals={meal_types}")
+                
+                stages.append({
+                    'agent': 'llm_parser',
+                    'name': '🧠 LLM Parser',
+                    'status': 'completed',
+                    'duration': round(time.time() - stage1_start, 2),
+                    'result': {'parsed': parsed_query}
+                })
             
-            budget_rub = parsed_query.get('budget_rub') or 3000
-            people = parsed_query.get('people') or 2
-            meal_types = parsed_query.get('meal_type') or ['dinner']
+            except Exception as e:
+                logger.error(f"❌ Ошибка LLM Parser: {e}", exc_info=True)
+                stages.append({
+                    'agent': 'llm_parser',
+                    'name': '🧠 LLM Parser',
+                    'status': 'failed',
+                    'error': str(e)
+                })
+                raise
             
-            print(f"   ✅ Распознано: {parsed_query}")
-            print(f"   💡 Применены дефолты: people={people}, budget={budget_rub}, meals={meal_types}")
-            
-            stages.append({
-                'agent': 'llm_parser',
-                'name': '🧠 LLM Parser',
-                'status': 'completed',
-                'duration': round(time.time() - stage1_start, 2),
-                'result': {'parsed': parsed_query}
-            })
-            
-            # ============================================
             # ЭТАП 2: COMPATIBILITY AGENT
-            # ============================================
-            print("\n🔗 ЭТАП 2: Compatibility Agent")
+            logger.info("🔗 Запуск CompatibilityAgent...")
             stage2_start = time.time()
             
-            compatibility_query = {
-                'meal_types': meal_types,
-                'people': people,
-                'budget_rub': budget_rub,
-                'exclude_tags': parsed_query.get('exclude_tags', []),
-                'include_tags': parsed_query.get('include_tags', [])
-            }
-            
-            compatibility_result = self.compatibility_agent.generate_basket(
-                parsed_query=compatibility_query,
-                strategy='smart'  
-            )
-            
-            basket_v1: List[BasketItem] = compatibility_result.get('basket', [])
-            
-            print(f"   ✅ Найдено товаров: {len(basket_v1)}")
-            print(f"   💵 Итого: {compatibility_result.get('total_price', 0):.2f}₽")
-            
-            stages.append({
-                'agent': 'compatibility',
-                'name': '🔗 Compatibility Agent',
-                'status': 'completed',
-                'duration': round(time.time() - stage2_start, 2),
-                'result': {
-                    'basket': basket_v1,
-                    'scenario': compatibility_result.get('scenario_used'),
-                    'compatibility_score': compatibility_result.get('compatibility_score'),
-                    'total_price': compatibility_result.get('total_price'),
-                    'success': compatibility_result.get('success')
+            try:
+                compatibility_query = {
+                    'meal_types': meal_types,
+                    'people': people,
+                    'budget_rub': budget_rub,
+                    'exclude_tags': parsed_query.get('exclude_tags', []),
+                    'include_tags': parsed_query.get('include_tags', [])
                 }
-            })
+                
+                compatibility_result = self.compatibility_agent.generate_basket(
+                    parsed_query=compatibility_query,
+                    strategy='smart'
+                )
+                
+                basket_v1 = compatibility_result.get('basket', [])
+                
+                logger.info(f"✅ CompatibilityAgent: {len(basket_v1)} товаров, {compatibility_result.get('total_price', 0):.2f}₽")
+                
+                stages.append({
+                    'agent': 'compatibility',
+                    'name': '🔗 Compatibility Agent',
+                    'status': 'completed',
+                    'duration': round(time.time() - stage2_start, 2),
+                    'result': {
+                        'basket': basket_v1,
+                        'scenario': compatibility_result.get('scenario_used'),
+                        'compatibility_score': compatibility_result.get('compatibility_score'),
+                        'total_price': compatibility_result.get('total_price'),
+                        'success': compatibility_result.get('success')
+                    }
+                })
+                
+                basket_current = basket_v1
             
-            basket_current = basket_v1
+            except Exception as e:
+                logger.error(f"❌ Ошибка CompatibilityAgent: {e}", exc_info=True)
+                stages.append({
+                    'agent': 'compatibility',
+                    'name': '🔗 Compatibility Agent',
+                    'status': 'failed',
+                    'error': str(e)
+                })
+                raise
             
-            # ============================================
             # ЭТАП 3: BUDGET AGENT
-            # ============================================
-            print("\n💰 ЭТАП 3: Budget Agent")
+            logger.info("💰 Запуск BudgetAgent...")
             stage3_start = time.time()
             
-            budget_result = self.budget_agent.optimize(
-                basket=basket_current,  # ✅ Передаем List[BasketItem]
-                budget_rub=budget_rub,
-                min_discount=0.2
-            )
+            try:
+                budget_result = self.budget_agent.optimize(
+                    basket=basket_current,
+                    budget_rub=budget_rub,
+                    min_discount=0.2
+                )
+                
+                basket_v2 = budget_result['basket']
+                
+                logger.info(f"✅ BudgetAgent: {len(budget_result['replacements'])} замен, экономия {budget_result['saved']:.2f}₽")
+                
+                stages.append({
+                    'agent': 'budget',
+                    'name': '💰 Budget Agent',
+                    'status': 'completed',
+                    'duration': round(time.time() - stage3_start, 2),
+                    'result': {
+                        'basket': basket_v2,
+                        'saved': budget_result['saved'],
+                        'replacements': budget_result['replacements'],
+                        'within_budget': budget_result['within_budget'],
+                        'optimized': len(budget_result['replacements']) > 0
+                    }
+                })
+                
+                basket_current = basket_v2
             
-            basket_v2: List[BasketItem] = budget_result['basket']
+            except Exception as e:
+                logger.error(f"❌ Ошибка BudgetAgent: {e}", exc_info=True)
+                stages.append({
+                    'agent': 'budget',
+                    'name': '💰 Budget Agent',
+                    'status': 'failed',
+                    'error': str(e)
+                })
+                # НЕ падаем! Возвращаем корзину от CompatibilityAgent
+                basket_current = basket_v1
+                logger.warning("⚠️ Используем корзину без бюджетной оптимизации")
             
-            print(f"   ✅ Оптимизировано товаров: {len(budget_result['replacements'])}")
-            print(f"   💰 Экономия: {budget_result['saved']:.2f}₽")
-            
-            stages.append({
-                'agent': 'budget',
-                'name': '💰 Budget Agent',
-                'status': 'completed',
-                'duration': round(time.time() - stage3_start, 2),
-                'result': {
-                    'basket': basket_v2,
-                    'saved': budget_result['saved'],
-                    'replacements': budget_result['replacements'],
-                    'within_budget': budget_result['within_budget'],
-                    'optimized': len(budget_result['replacements']) > 0
-                }
-            })
-            
-            basket_current = basket_v2
-            
-            # ============================================
             # ЭТАП 4: PROFILE AGENT (заглушка)
-            # ============================================
-            print("\n👤 ЭТАП 4: Profile Agent")
-            stage4_start = time.time()
-            
-            basket_v3 = basket_current  # ✅ Теперь basket_v3 определен!
+            basket_v3 = basket_current
             
             stages.append({
                 'agent': 'profile',
                 'name': '👤 Profile Agent',
                 'status': 'completed',
-                'duration': round(time.time() - stage4_start, 2),
+                'duration': 0.0,
                 'result': {
                     'basket': basket_v3,
                     'personalized': False,
@@ -166,10 +192,11 @@ class AgentPipeline:
                 }
             })
             
+            # ФОРМАТИРОВАНИЕ
             formatted_basket = []
             for item in basket_v3:
                 formatted_item = {
-                    **item,  # Все существующие поля
+                    **item,
                     'price_display': f"{item['price_per_unit']:.2f}₽/{item['unit']}",
                     'quantity_display': f"{item['quantity']:.2f}{item['unit']}",
                     'total_display': f"{item['total_price']:.2f}₽",
@@ -177,17 +204,19 @@ class AgentPipeline:
                 }
                 formatted_basket.append(formatted_item)
             
-            # ============================================
-            # ФИНАЛЬНЫЙ РЕЗУЛЬТАТ
-            # ============================================
+            # ФИНАЛ
             total_price = sum(item['total_price'] for item in basket_v3)
             original_price = compatibility_result.get('total_price', total_price)
             savings = original_price - total_price
             
+            execution_time = round(time.time() - start_time, 2)
+            
+            logger.info(f"🎉 Пайплайн завершён за {execution_time}с: {len(basket_v3)} товаров, {total_price:.2f}₽")
+            
             return {
                 'status': 'success',
                 'parsed': parsed_query,
-                'basket': formatted_basket,  # ✅ Используем форматированную версию
+                'basket': formatted_basket,
                 'summary': {
                     'items_count': len(basket_v3),
                     'total_price': round(total_price, 2),
@@ -195,7 +224,7 @@ class AgentPipeline:
                     'savings': round(savings, 2),
                     'budget_rub': budget_rub,
                     'within_budget': total_price <= budget_rub,
-                    'execution_time_sec': round(time.time() - start_time, 2)
+                    'execution_time_sec': execution_time
                 },
                 'stages': stages,
                 'metadata': {
@@ -207,8 +236,7 @@ class AgentPipeline:
             }
         
         except Exception as e:
-            import traceback
-            traceback.print_exc()
+            logger.exception("❌ Критическая ошибка в пайплайне")
             
             return {
                 'status': 'error',

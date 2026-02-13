@@ -9,7 +9,25 @@ import numpy as np
 from pathlib import Path
 from typing import List, Dict, Optional
 from sklearn.metrics.pairwise import cosine_similarity
+import sys
 
+# ============================================
+# УМНЫЙ ИМПОРТ: Работает и в тестах, и в Flask
+# ============================================
+
+# Добавляем корень проекта в путь
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+# Теперь импортируем database utility
+try:
+    from src.utils.database import get_connection
+    HAS_DB_UTILS = True
+except ModuleNotFoundError:
+    # Fallback: если не получилось - будем использовать прямой sqlite3.connect
+    HAS_DB_UTILS = False
+    print("⚠️ src.utils.database недоступен, используем fallback")
 
 DB_PATH = Path("data/processed/products.db")
 
@@ -69,9 +87,161 @@ class BudgetAgent:
                 continue
         
         return round(total, 2)
+    def _search_in_db(
+        self, 
+        conn, 
+        max_price, 
+        meal_components, 
+        original_embedding, 
+        original_quantity, 
+        original_item
+    ):
+        """
+        Вынесенная логика поиска в БД (для переиспользования).
+        """
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT id, product_name, product_category, brand, price_per_unit, unit, 
+                package_size, tags, meal_components, embedding
+            FROM products
+            WHERE embedding IS NOT NULL
+            AND price_per_unit < ?
+        """
+        
+        if meal_components:
+            main_component = meal_components[0] if isinstance(meal_components, list) else meal_components
+            query += f" AND meal_components LIKE '%{main_component}%'"
+        
+        cursor.execute(query, (max_price,))
+        rows = cursor.fetchall()
+        
+        if not rows:
+            return None
+        
+        # Similarity search (без изменений)
+        candidates = []
+        
+        for row in rows:
+            embedding_blob = row[9]
+            if not embedding_blob:
+                continue
+            
+            try:
+                product_embedding = np.frombuffer(embedding_blob, dtype=np.float32)
+                
+                if len(product_embedding) == 0:
+                    continue
+                
+                if not np.isfinite(product_embedding).all():
+                    continue
+                
+                if not np.isfinite(original_embedding).all():
+                    continue
+                
+                similarity = float(cosine_similarity(
+                    original_embedding.reshape(1, -1),
+                    product_embedding.reshape(1, -1)
+                )[0, 0])
+                
+                if not np.isfinite(similarity):
+                    continue
+                
+                price_per_unit = row[4]
+                total_price = price_per_unit * original_quantity
+                
+                candidates.append({
+                    'id': row[0],
+                    'name': row[1],
+                    'product_name': row[1],
+                    'product_category': row[2],
+                    'category': row[2],
+                    'brand': row[3],
+                    'price_per_unit': price_per_unit,
+                    'price': price_per_unit,
+                    'quantity': original_quantity,
+                    'total_price': round(total_price, 2),
+                    'unit': row[5],
+                    'package_size': row[6],
+                    'tags': row[7],
+                    'meal_components': row[8],
+                    'embedding': product_embedding,
+                    'similarity': similarity
+                })
+                
+            except Exception as e:
+                continue
+        
+        if not candidates:
+            return None
+        
+        candidates.sort(key=lambda x: x['similarity'], reverse=True)
+        
+        for candidate in candidates:
+            if candidate['id'] != original_item.get('id'):
+                return candidate
+        
+        return None
+    def validate_basket(self, basket: List[Dict]) -> Dict:
+        """
+        Валидация корзины перед оптимизацией.
+        
+        Проверяет:
+        1. Наличие embeddings у всех товаров
+        2. Валидность цен и количеств
+        3. Корректность данных
+        
+        Args:
+            basket: Корзина для проверки
+        
+        Returns:
+            Dict: {
+                "valid": True/False,
+                "errors": [...],
+                "warnings": [...]
+            }
+        """
+        errors = []
+        warnings = []
+        
+        for i, item in enumerate(basket):
+            item_name = item.get('name', item.get('product_name', f'item_{i}'))
+            
+            # 1. Проверка embedding (КРИТИЧНО!)
+            if 'embedding' not in item or item['embedding'] is None:
+                errors.append(f"❌ Товар '{item_name}' не имеет embedding (невалидный товар)")
+                continue
+            
+            # Проверяем, что embedding валидный numpy array
+            embedding = item['embedding']
+            if not isinstance(embedding, np.ndarray):
+                errors.append(f"❌ Товар '{item_name}': embedding не является numpy array")
+                continue
+            
+            if len(embedding) == 0:
+                errors.append(f"❌ Товар '{item_name}': пустой embedding")
+                continue
+            
+            if not np.isfinite(embedding).all():
+                errors.append(f"❌ Товар '{item_name}': embedding содержит NaN/Inf")
+                continue
+            
+            # 2. Проверка цены
+            price = item.get('price') or item.get('price_per_unit') or item.get('total_price')
+            if price is None or price <= 0:
+                errors.append(f"❌ Товар '{item_name}': некорректная цена ({price})")
+            
+            # 3. Проверка quantity
+            quantity = item.get('quantity', 1)
+            if quantity <= 0:
+                warnings.append(f"⚠️ Товар '{item_name}': quantity = {quantity} (должно быть > 0)")
+        
+        return {
+            "valid": len(errors) == 0,
+            "errors": errors,
+            "warnings": warnings
+        }
 
-    
-    
     # >>>>>>> НОВОЕ: вспомогательный метод <<<<<<<<
     def check_budget(self, basket: list[dict], budget: float) -> dict:
         """
@@ -95,17 +265,21 @@ class BudgetAgent:
         budget_rub: Optional[float] = None,
         min_discount: float = 0.3
     ) -> Dict:
-        """
-        Оптимизирует корзину под бюджет.
+        """Оптимизирует корзину под бюджет."""
         
-        Args:
-            basket: Корзина от CompatibilityAgent
-            budget_rub: Бюджет в рублях
-            min_discount: Минимальная экономия (0.3 = 30%)
+        # Валидация и early exits (БЕЗ ИЗМЕНЕНИЙ)
+        validation = self.validate_basket(basket)
+        if not validation["valid"]:
+            return {
+                "basket": [],
+                "total_price": 0.0,
+                "saved": 0.0,
+                "replacements": [],
+                "within_budget": False,
+                "errors": validation["errors"],
+                "message": "Невалидная корзина"
+            }
         
-        Returns:
-            Dict: Результат оптимизации
-        """
         if not basket:
             return {
                 "basket": [],
@@ -116,10 +290,8 @@ class BudgetAgent:
                 "message": "Пустая корзина"
             }
         
-        # Считаем текущую цену
-        original_price = sum(item.get('price', 0) for item in basket)
+        original_price = self.calculate_total(basket)
         
-        # Если бюджет не указан или укладываемся - ничего не делаем
         if budget_rub is None or original_price <= budget_rub:
             return {
                 "basket": basket,
@@ -133,62 +305,108 @@ class BudgetAgent:
         print(f"\n💰 BudgetAgent: Бюджет превышен на {original_price - budget_rub:.2f}₽")
         print(f"   Ищу дешёвые аналоги...")
         
-        # Создаём connection (thread-safe)
-        conn = sqlite3.connect(self.db_path)
-        
+        # ============================================
+        # ИЗМЕНЕНИЕ: Выбираем способ подключения
+        # ============================================
         optimized_basket = basket.copy()
         replacements = []
         total_saved = 0.0
         
-        # Сортируем по цене (самые дорогие вверху)
         sorted_indices = sorted(
             range(len(optimized_basket)),
-            key=lambda i: optimized_basket[i].get('price', 0),
+            key=lambda i: optimized_basket[i].get('total_price', 0),
             reverse=True
         )
         
-        # Пытаемся заменить дорогие товары
-        for idx in sorted_indices:
-            current_price = sum(p.get('price', 0) for p in optimized_basket)
-            
-            # Если уже уложились - останавливаемся
-            if current_price <= budget_rub:
-                break
-            
-            item = optimized_basket[idx]
-            
-            # Ищем дешёвый аналог
-            alternative = self._find_cheaper_alternative(
-                item,
-                min_discount=min_discount,
-                conn=conn
-            )
-            
-            if alternative:
-                old_price = item.get('price', 0)
-                new_price = alternative.get('price', 0)
-                saved = old_price - new_price
-                
-                # Заменяем товар
-                optimized_basket[idx] = alternative
-                
-                replacements.append({
-                    'from': item.get('name', item.get('product_name', '')),
-                    'to': alternative.get('name', alternative.get('product_name', '')),
-                    'saved': saved
-                })
-                
-                total_saved += saved
-                
-                print(f"   ✅ {item.get('name', '')[:40]} ({old_price:.2f}₽)")
-                print(f"      → {alternative.get('name', '')[:40]} ({new_price:.2f}₽)")
-                print(f"      Экономия: {saved:.2f}₽")
+        # Если доступен get_connection - используем context manager
+        if HAS_DB_UTILS:
+            with get_connection() as conn:
+                for idx in sorted_indices:
+                    current_price = self.calculate_total(optimized_basket)
+                    
+                    if current_price <= budget_rub:
+                        break
+                    
+                    item = optimized_basket[idx]
+                    
+                    alternative = self._find_cheaper_alternative(
+                        item,
+                        min_discount=min_discount,
+                        conn=conn
+                    )
+                    
+                    if alternative:
+                        old_price = item.get('total_price') or (
+                            item.get('price_per_unit', item.get('price', 0)) * item.get('quantity', 1)
+                        )
+                        new_price = alternative.get('total_price', 0)
+                        saved = old_price - new_price
+                        
+                        optimized_basket[idx] = alternative
+                        
+                        replacements.append({
+                            'from': item.get('name', item.get('product_name', '')),
+                            'to': alternative.get('name', alternative.get('product_name', '')),
+                            'saved': round(saved, 2),
+                            'old_price': round(old_price, 2),
+                            'new_price': round(new_price, 2),
+                            'quantity': alternative.get('quantity', 1)
+                        })
+                        
+                        total_saved += saved
+                        
+                        print(f"   ✅ {item.get('name', '')[:40]} ({old_price:.2f}₽)")
+                        print(f"      → {alternative.get('name', '')[:40]} ({new_price:.2f}₽)")
+                        print(f"      Экономия: {saved:.2f}₽")
         
-        # Закрываем connection
-        conn.close()
-        
-        # Итоговая цена
-        final_price = sum(p.get('price', 0) for p in optimized_basket)
+        else:
+            # Fallback: используем прямой sqlite3.connect (для тестов)
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            
+            try:
+                for idx in sorted_indices:
+                    current_price = self.calculate_total(optimized_basket)
+                    
+                    if current_price <= budget_rub:
+                        break
+                    
+                    item = optimized_basket[idx]
+                    
+                    alternative = self._find_cheaper_alternative(
+                        item,
+                        min_discount=min_discount,
+                        conn=conn
+                    )
+                    
+                    if alternative:
+                        old_price = item.get('total_price') or (
+                            item.get('price_per_unit', item.get('price', 0)) * item.get('quantity', 1)
+                        )
+                        new_price = alternative.get('total_price', 0)
+                        saved = old_price - new_price
+                        
+                        optimized_basket[idx] = alternative
+                        
+                        replacements.append({
+                            'from': item.get('name', item.get('product_name', '')),
+                            'to': alternative.get('name', alternative.get('product_name', '')),
+                            'saved': round(saved, 2),
+                            'old_price': round(old_price, 2),
+                            'new_price': round(new_price, 2),
+                            'quantity': alternative.get('quantity', 1)
+                        })
+                        
+                        total_saved += saved
+                        
+                        print(f"   ✅ {item.get('name', '')[:40]} ({old_price:.2f}₽)")
+                        print(f"      → {alternative.get('name', '')[:40]} ({new_price:.2f}₽)")
+                        print(f"      Экономия: {saved:.2f}₽")
+            finally:
+                conn.close()
+    
+        # Финальный результат
+        final_price = self.calculate_total(optimized_basket)
         
         return {
             "basket": optimized_basket,
@@ -198,135 +416,63 @@ class BudgetAgent:
             "within_budget": final_price <= budget_rub,
             "message": f"Заменено {len(replacements)} товаров, сэкономлено {total_saved:.2f}₽"
         }
-    
-    
+
+        
     def _find_cheaper_alternative(
-        self,
-        item: Dict,
-        min_discount: float = 0.3,
-        conn: Optional[sqlite3.Connection] = None
-    ) -> Optional[Dict]:
-        """
-        Ищет дешёвый аналог товара используя embeddings.
-        
-        Args:
-            item: Исходный товар
-            min_discount: Минимальная экономия
-            conn: SQLite connection (thread-safe)
-        
-        Returns:
-            Dict: Дешёвый аналог или None
-        """
-        original_price = item.get('price', 0)
-        original_embedding = item.get('embedding')
-        meal_components = item.get('meal_components', [])
-        
-        if original_embedding is None:
-            return None
-        
-        # Максимальная цена аналога
-        max_price = original_price * (1 - min_discount)
-        
-        # Создаём connection если не передана
-        if conn is None:
-            conn = sqlite3.connect(self.db_path)
-            close_conn = True
-        else:
-            close_conn = False
-        
-        cursor = conn.cursor()
-        
-        # Ищем похожие товары дешевле
-        query = """
-            SELECT id, product_name, product_category, brand, price_per_unit, unit, 
-                   package_size, tags, meal_components, embedding
-            FROM products
-            WHERE embedding IS NOT NULL
-            AND price_per_unit < ?
-        """
-        
-        # Фильтр по meal_component если есть
-        if meal_components:
-            main_component = meal_components[0] if isinstance(meal_components, list) else meal_components
-            query += f" AND meal_components LIKE '%{main_component}%'"
-        
-        cursor.execute(query, (max_price,))
-        rows = cursor.fetchall()
-        
-        if not rows:
-            if close_conn:
-                conn.close()
-            return None
-        
-        # Считаем similarity для каждого кандидата
-        candidates = []
-        
-        for row in rows:
-            embedding_blob = row[9]
-            if not embedding_blob:
-                continue
+            self,
+            item: Dict,
+            min_discount: float = 0.3,
+            conn: Optional[sqlite3.Connection] = None
+        ) -> Optional[Dict]:
+            """
+            Ищет дешёвый аналог.
             
-            try:
-                # Десериализуем embedding
-                product_embedding = np.frombuffer(embedding_blob, dtype=np.float32)
-                
-                # Проверяем валидность
-                if len(product_embedding) == 0:
-                    continue
-                
-                if not np.isfinite(product_embedding).all():
-                    continue
-                
-                # Проверяем исходный embedding
-                if not np.isfinite(original_embedding).all():
-                    continue
-                
-                # Semantic similarity
-                similarity = float(cosine_similarity(
-                    original_embedding.reshape(1, -1),
-                    product_embedding.reshape(1, -1)
-                )[0, 0])
-                
-                # Проверяем что similarity валидный
-                if not np.isfinite(similarity):
-                    continue
-                
-                candidates.append({
-                    'id': row[0],
-                    'name': row[1],
-                    'product_name': row[1],
-                    'product_category': row[2],
-                    'brand': row[3],
-                    'price': row[4],
-                    'unit': row[5],
-                    'package_size': row[6],
-                    'tags': row[7],
-                    'meal_components': row[8],
-                    'embedding': product_embedding,
-                    'similarity': similarity
-                })
-                
-            except Exception as e:
-                continue
-        
-        if close_conn:
-            conn.close()
-        
-        if not candidates:
-            return None
-        
-        # Сортируем по similarity (самые похожие вверху)
-        candidates.sort(key=lambda x: x['similarity'], reverse=True)
-        
-        # Берём самый похожий (но не идентичный)
-        for candidate in candidates:
-            if candidate['id'] != item.get('id'):
-                return candidate
-        
-        return None
+            ИЗМЕНЕНИЕ: Теперь принимает connection извне (не создаёт свой).
+            """
+            # Получение цены (без изменений)
+            if 'price_per_unit' in item:
+                original_price = item['price_per_unit']
+            elif 'price' in item:
+                original_price = item['price']
+            elif 'total_price' in item and 'quantity' in item:
+                original_price = item['total_price'] / item['quantity']
+            else:
+                print(f"⚠️ Товар {item.get('name', 'unknown')}: не найдена цена")
+                return None
+            
+            original_embedding = item.get('embedding')
+            meal_components = item.get('meal_components', [])
+            original_quantity = item.get('quantity', 1)
+            
+            if original_embedding is None:
+                return None
+            
+            max_price = original_price * (1 - min_discount)
+            
+            # ============================================
+            # ИЗМЕНЕНИЕ: НЕ создаём connection, используем переданный
+            # ============================================
+            if conn is None:
+                with get_connection() as temp_conn:
+                    return self._search_in_db(
+                        temp_conn, 
+                        max_price, 
+                        meal_components, 
+                        original_embedding, 
+                        original_quantity, 
+                        item
+                    )
+            else:
+                # Используем переданный connection
+                return self._search_in_db(
+                    conn, 
+                    max_price, 
+                    meal_components, 
+                    original_embedding, 
+                    original_quantity, 
+                    item
+                )
 
-
-# ==================== ТЕСТИРОВАНИЕ ====================
 
 def test_budget_agent():
     """Тестирует работу BudgetAgent."""
