@@ -137,7 +137,8 @@ class CompatibilityAgent:
                 'unit': best_product.get('unit', 'кг'),  # ✅ Уже нормализован
                 'category': best_product.get('product_category', ''),
                 'brand': best_product.get('brand', ''),
-                'rating': best_product.get('rating')
+                'rating': best_product.get('rating'),
+                'embedding': best_product.get('embedding')
             }
 
             # Конвертируем количество из сценария в единицы товара
@@ -148,15 +149,21 @@ class CompatibilityAgent:
                 quantity_in_product_units = quantity_needed / 1000
             # Если unit уже совпадает ('кг' == 'кг'), конвертация не нужна
 
-            # Создаем BasketItem
+            embedding = best_product.get('embedding')  # уже numpy array из ProductSearcher
+
             basket_item = create_basket_item(
                 product=product_for_schema,
-                quantity=quantity_in_product_units,  # уже в кг/л/шт
+                quantity=quantity_in_product_units,
                 agent='compatibility',
                 reason=f'Найден по запросу "{search_query}"',
                 ingredient_role=ingredient,
-                search_score=best_product.get('score', 0)
+                search_score=best_product.get('search_score', 0)
             )
+
+            # Добавляем embedding напрямую в готовый item
+            if embedding is not None:
+                basket_item['embedding'] = embedding.tolist()
+
 
             
             basket.append(basket_item)

@@ -39,3 +39,6 @@ test-search:
 
 test-cmp:
 	uv run python -m src.agents.compatibility.agent
+
+test:
+	uv run pytest -v

@@ -139,12 +139,24 @@ class AgentPipeline:
             stage3_start = time.time()
             
             try:
+                # DEBUG: Проверяем что передаём в BudgetAgent
+                logger.info(f"🔍 DEBUG передаём в BudgetAgent:")
+                logger.info(f"   basket length: {len(basket_current)}")
+                logger.info(f"   budget_rub: {budget_rub}")
+                logger.info(f"   first item: {basket_current[0] if basket_current else 'empty'}")
+
                 budget_result = self.budget_agent.optimize(
                     basket=basket_current,
                     budget_rub=budget_rub,
                     min_discount=0.2
                 )
-                
+                # DEBUG: Проверяем что вернул BudgetAgent
+                logger.info(f"🔍 DEBUG BudgetAgent result:")
+                logger.info(f"   basket length: {len(budget_result.get('basket', []))}")
+                logger.info(f"   total_price: {budget_result.get('total_price')}")
+                logger.info(f"   within_budget: {budget_result.get('within_budget')}")
+                logger.info(f"   message: {budget_result.get('message')}")
+                        
                 basket_v2 = budget_result['basket']
                 
                 logger.info(f"✅ BudgetAgent: {len(budget_result['replacements'])} замен, экономия {budget_result['saved']:.2f}₽")
@@ -213,6 +225,12 @@ class AgentPipeline:
             
             logger.info(f"🎉 Пайплайн завершён за {execution_time}с: {len(basket_v3)} товаров, {total_price:.2f}₽")
             
+            # DEBUG: Финальная корзина
+            logger.info(f"🔍 DEBUG финальная корзина:")
+            logger.info(f"   basket_v3 length: {len(basket_v3)}")
+            logger.info(f"   formatted_basket length: {len(formatted_basket)}")
+            logger.info(f"   total_price: {total_price}")
+
             return {
                 'status': 'success',
                 'parsed': parsed_query,
