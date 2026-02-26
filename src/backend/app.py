@@ -3,7 +3,7 @@
 Flask API для генерации корзин.
 """
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template, send_from_directory
 from flask_cors import CORS
 import os
 import sys
@@ -11,8 +11,19 @@ from pathlib import Path
 from dotenv import load_dotenv
 from src.utils.database import init_db_for_flask, get_db, get_db_stats
 import logging
+import numpy as np
+from flask.json.provider import DefaultJSONProvider
 
-# Добавляем корень проекта в PYTHONPATH
+class NumpyJSONProvider(DefaultJSONProvider):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        return super().default(obj)
+    
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -36,7 +47,13 @@ def create_app():
     """
     global pipeline
     
-    app = Flask(__name__)
+    app = Flask(
+    __name__,
+    template_folder='../templates',
+    static_folder='../static'
+    )
+    app.json_provider_class = NumpyJSONProvider
+    app.json = NumpyJSONProvider(app)
     
     # CORS
     CORS(app, resources={
@@ -61,17 +78,7 @@ def create_app():
     
     @app.route('/')
     def index():
-        """Главная страница."""
-        return jsonify({
-            "message": "🛒 Basket Debate API",
-            "version": "1.0.0",
-            "endpoints": {
-                "health": "/health",
-                "generate_basket": "/api/generate-basket (POST)",
-                "products": "/api/products (GET)",
-                "stats": "/api/stats (GET)"
-            }
-        })
+        return render_template('index.html')
     
     
     @app.route('/health')
@@ -190,6 +197,7 @@ def create_app():
                 'status': 'error',
                 'message': str(e)
             }), 500
+        
     @app.route('/api/stats', methods=['GET'])
     def get_stats():
         """

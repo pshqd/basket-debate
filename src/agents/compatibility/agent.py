@@ -141,13 +141,25 @@ class CompatibilityAgent:
                 'embedding': best_product.get('embedding')
             }
 
-            # Конвертируем количество из сценария в единицы товара
-            quantity_in_product_units = quantity_needed
-            if unit == 'г' and product_for_schema['unit'] == 'кг':
-                quantity_in_product_units = quantity_needed / 1000
-            elif unit == 'мл' and product_for_schema['unit'] == 'л':
-                quantity_in_product_units = quantity_needed / 1000
-            # Если unit уже совпадает ('кг' == 'кг'), конвертация не нужна
+            def convert_quantity(amount, from_unit, to_unit):
+                """Конвертирует количество из единиц сценария в единицы товара."""
+                # Нормализуем: г и мл — это "малые" единицы, кг и л — "большие"
+                small = {'г', 'мл'}
+                big   = {'кг', 'л'}
+
+                if from_unit == to_unit:
+                    return amount                      # г→г, кг→кг, мл→мл, л→л
+                if from_unit in small and to_unit in big:
+                    return amount / 1000               # г→кг, мл→л, г→л, мл→кг
+                if from_unit in big and to_unit in small:
+                    return amount * 1000               # кг→г, л→мл
+                return amount                          # шт→шт и прочее
+
+            quantity_in_product_units = convert_quantity(
+                quantity_needed,
+                unit,                          # unit из сценария (г/мл/кг/л/шт)
+                product_for_schema['unit']     # unit товара из БД
+            )
 
             embedding = best_product.get('embedding')  # уже numpy array из ProductSearcher
 

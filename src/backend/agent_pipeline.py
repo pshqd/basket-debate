@@ -2,7 +2,7 @@
 """
 Оркестрация агентов для генерации корзины.
 """
-
+import numpy as np
 import sys
 from pathlib import Path
 from typing import Dict, Any, List
@@ -158,6 +158,9 @@ class AgentPipeline:
                 logger.info(f"   message: {budget_result.get('message')}")
                         
                 basket_v2 = budget_result['basket']
+                if not basket_v2:
+                    logger.warning("⚠️ BudgetAgent вернул пустую корзину, используем корзину от CompatibilityAgent")
+                    basket_v2 = basket_v1
                 
                 logger.info(f"✅ BudgetAgent: {len(budget_result['replacements'])} замен, экономия {budget_result['saved']:.2f}₽")
                 
@@ -205,15 +208,20 @@ class AgentPipeline:
             })
             
             # ФОРМАТИРОВАНИЕ
+
             formatted_basket = []
             for item in basket_v3:
                 formatted_item = {
-                    **item,
-                    'price_display': f"{item['price_per_unit']:.2f}₽/{item['unit']}",
-                    'quantity_display': f"{item['quantity']:.2f}{item['unit']}",
-                    'total_display': f"{item['total_price']:.2f}₽",
-                    'breakdown': f"{item['quantity']:.2f}{item['unit']} × {item['price_per_unit']:.2f}₽ = {item['total_price']:.2f}₽"
+                    k: v for k, v in item.items()
+                    if k != 'embedding'                          # убираем embedding любого типа
+                    and not isinstance(v, np.ndarray)            # убираем любые numpy массивы
                 }
+                formatted_item.update({
+                    'price_display':    f"{item['price_per_unit']:.2f}₽/{item['unit']}",
+                    'quantity_display': f"{item['quantity']:.2f}{item['unit']}",
+                    'total_display':    f"{item['total_price']:.2f}₽",
+                    'breakdown':        f"{item['quantity']:.2f}{item['unit']} × {item['price_per_unit']:.2f}₽ = {item['total_price']:.2f}₽"
+                })
                 formatted_basket.append(formatted_item)
             
             # ФИНАЛ

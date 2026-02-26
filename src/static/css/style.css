@@ -1,0 +1,212 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f4f6f9;
+  color: #1a1a2e;
+  min-height: 100vh;
+}
+
+header {
+  text-align: center;
+  padding: 28px 16px 12px;
+}
+header h1 { font-size: 2rem; font-weight: 700; }
+.subtitle  { color: #666; margin-top: 6px; }
+
+main {
+  display: flex;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.input-section, .profile-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+label { font-weight: 600; font-size: 0.9rem; }
+
+textarea, input[type="text"], select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+textarea:focus, input:focus, select:focus {
+  outline: none;
+  border-color: #6c63ff;
+}
+
+button {
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+#btn-generate {
+  background: linear-gradient(135deg, #6c63ff, #a855f7);
+  color: #fff;
+}
+#btn-generate:hover:not(:disabled) { opacity: 0.9; }
+
+.btn-secondary {
+  background: #f0eeff;
+  color: #6c63ff;
+  font-size: 0.9rem;
+}
+
+hr { border: none; border-top: 1px solid #eee; }
+
+/* --- Result --- */
+.result-section {
+  flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  min-height: 320px;
+}
+
+.placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa;
+  font-size: 1.1rem;
+}
+
+.result-meta {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  color: #555;
+}
+.total-price { font-weight: 700; color: #1a1a2e; font-size: 1rem; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+thead th {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 2px solid #eee;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  color: #888;
+}
+tbody td { padding: 10px 8px; border-bottom: 1px solid #f0f0f0; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #fafafa; }
+td.name { font-weight: 500; }
+td.price { font-weight: 600; color: #6c63ff; }
+td.role { color: #888; font-size: 0.85rem; }
+
+.warning {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: #fff8e1;
+  border-left: 4px solid #f59e0b;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+.error {
+  padding: 16px;
+  background: #fef2f2;
+  border-left: 4px solid #ef4444;
+  border-radius: 8px;
+  color: #b91c1c;
+}
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #888;
+  font-size: 1.05rem;
+}
+.hidden { display: none !important; }
+/* Agent Log */
+.agent-log {
+  margin-bottom: 20px;
+  border: 1px solid #e8e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.agent-log summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #6c63ff;
+  background: #f8f7ff;
+  user-select: none;
+  list-style: none;
+}
+.agent-log summary::-webkit-details-marker { display: none; }
+.agent-log summary::before { content: '▶ '; font-size: 0.7rem; }
+.agent-log[open] summary::before { content: '▼ '; }
+
+#agent-log-body {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.log-stage {
+  border-left: 3px solid #e0e0f0;
+  padding-left: 12px;
+}
+
+.log-stage-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.log-name { color: #1a1a2e; }
+.log-duration { color: #aaa; font-size: 0.8rem; margin-left: auto; }
+
+.log-detail {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: #555;
+  line-height: 1.6;
+}
+
+.log-replacement {
+  padding: 2px 0;
+  color: #059669;
+}
+
+.log-empty { color: #aaa; font-size: 0.85rem; }

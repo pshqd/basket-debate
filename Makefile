@@ -3,17 +3,9 @@
 
 # Запуск бэкенда
 dev:
-	uv run flask run --reload
+	uv run python -m flask --app src/backend/app.py run --debug --port 5000
 
-# Запуск фронтенда
-frontend:
-	cd src/frontend && npm run dev
 
-# Запуск обоих одновременно (требует tmux или screen)
-all:
-	make dev & make frontend
-
-# Подготовка БД
 prepare-db:
 	uv run python -m src.scripts.prepare_db
 	uv run python -m src.scripts.build_embeddings

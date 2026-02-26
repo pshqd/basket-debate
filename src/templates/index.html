@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Мультиагентный Шоппер 🛒</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>basket-debate</h1>
+    <p class="subtitle">Несколько агентов подбирают вам наилучшую продуктовую корзину</p>
+  </header>
+
+  <main>
+    <!-- Левая панель: ввод -->
+    <aside class="sidebar">
+
+      <section class="input-section">
+        <label for="query">Ваш запрос</label>
+        <textarea
+          id="query"
+          placeholder="Например: вкусный ужин на троих на 500 рублей"
+          rows="3"
+        ></textarea>
+        <button id="btn-generate">🚀 Оптимизировать</button>
+      </section>
+
+      <hr />
+
+      <section class="profile-section">
+        <h3>Параметры</h3>
+
+        <label for="diet">Диета:</label>
+        <select id="diet">
+          <option value="">любая</option>
+          <option value="vegan">веган</option>
+          <option value="vegetarian">вегетариан</option>
+          <option value="vegetarian">кето</option>
+          <option value="vegetarian">спорт</option>
+        </select>
+
+        <label for="allergies">Аллергии:</label>
+        <input
+          id="allergies"
+          type="text"
+          placeholder="лактоза, орехи"
+        />
+
+        <button id="btn-profile" class="btn-secondary" disabled>
+          👤 Профиль (скоро)
+        </button>
+      </section>
+
+    </aside>
+
+    <!-- Правая панель: результат -->
+    <section class="result-section">
+      <div id="result-placeholder" class="placeholder">
+        🛍️ Введите запрос и нажмите кнопку
+      </div>
+
+      <div id="result-content" class="hidden">
+        
+        <div class="result-meta">
+          <span id="meta-scenario"></span>
+          <span id="meta-score"></span>
+          <span id="meta-total" class="total-price"></span>
+        </div>
+        <details class="agent-log" id="agent-log">
+            <summary>🤖 Как выбиралась корзина</summary>
+            <div id="agent-log-body"></div>
+        </details>
+        <table id="basket-table">
+          <thead>
+            <tr>
+              <th>Товар</th>
+              <th>Роль</th>
+              <th>Кол-во</th>
+              <th>Цена/ед</th>
+              <th>Итого</th>
+            </tr>
+          </thead>
+          <tbody id="basket-body"></tbody>
+        </table>
+
+        <div id="budget-warning" class="warning hidden">
+          ⚠️ Корзина превышает бюджет
+        </div>
+
+      </div>
+
+      <div id="result-error" class="hidden error">
+        <span id="error-message"></span>
+      </div>
+
+      <div id="result-loading" class="hidden loading">
+        ⏳ Подбираем корзину...
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

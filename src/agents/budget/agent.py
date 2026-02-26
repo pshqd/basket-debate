@@ -214,6 +214,9 @@ class BudgetAgent:
             
             # Проверяем, что embedding валидный numpy array
             embedding = item['embedding']
+            if isinstance(embedding, list):
+                embedding = np.array(embedding, dtype=np.float32)
+                item['embedding'] = embedding  # обновляем in-place, чтобы дальше работало
             if not isinstance(embedding, np.ndarray):
                 errors.append(f"❌ Товар '{item_name}': embedding не является numpy array")
                 continue
@@ -411,10 +414,12 @@ class BudgetAgent:
         return {
             "basket": optimized_basket,
             "total_price": final_price,
-            "saved": total_saved,
+            "saved": round(total_saved, 2),
             "replacements": replacements,
             "within_budget": final_price <= budget_rub,
+            "optimized": len(replacements) > 0,
             "message": f"Заменено {len(replacements)} товаров, сэкономлено {total_saved:.2f}₽"
+                if replacements else "В пределах бюджета"
         }
 
         
@@ -440,12 +445,15 @@ class BudgetAgent:
                 print(f"⚠️ Товар {item.get('name', 'unknown')}: не найдена цена")
                 return None
             
-            original_embedding = item.get('embedding')
+
             meal_components = item.get('meal_components', [])
             original_quantity = item.get('quantity', 1)
             
+            original_embedding = item.get('embedding')
             if original_embedding is None:
                 return None
+            if isinstance(original_embedding, list):
+                original_embedding = np.array(original_embedding, dtype=np.float32)
             
             max_price = original_price * (1 - min_discount)
             
